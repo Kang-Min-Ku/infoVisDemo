@@ -306,9 +306,9 @@
             if (brushedA2Data && brushedA2Data.length > 0) {
                 brushedA2Data = brushedA2Data.filter(d => d["year"] >= startYear && d["year"] <= endYear);
             }
-            else {
-                brushedA2Data = A2Data.filter(d => d["year"] >= startYear && d["year"] <= endYear);
-            }
+            // else {
+            //     brushedA2Data = A2Data.filter(d => d["year"] >= startYear && d["year"] <= endYear);
+            // }
             updateWorldMap();
             updateLoliPop();
             updateHeatmap();
