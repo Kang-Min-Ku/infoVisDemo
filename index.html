@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-legend/2.25.6/d3-legend.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <!-- NOTE: import javascript -->
+    <script src="components/worldmap.js"></script>
+    <script src="components/lolipopchart.js"></script>
+    <script src="components/heatmap.js"></script>
+    <script src="components/datatable.js"></script>
+
+    <title>Aviation Accident Visualization</title>
+    <style>
+        body {
+            background: #eee;
+            overflow-y: scroll;
+        }
+
+        .container {
+            width: 1350px;
+            background: white;
+        }
+
+        /* In the <style> tag in index.html */
+        .brushed {
+            stroke-width: 5;
+            stroke: black;
+            
+        }
+
+        .heatmapBox {
+            height: 1000px;
+            width: 1200px;
+        }
+
+        .geoBigBox {
+            height: 400px;
+            width: 1200px;
+        }
+
+        .geoSmallBox {
+            height: 150px;
+            width: 200px;
+        }
+        
+        .responsiveTable {
+            width: 100%;
+            border-collapse: collapse;
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="container navbar navbar-light bg-light">
+            <div class="container-fluid">
+                <span class="navbar-brand mb-0 h1">Aviation Accident Visualization</span>
+            </div>
+        </nav>
+
+    </header>
+
+    <main class="container pb-3">
+        <div class="row pt-2 align-items-center">
+            <div class="col-2 text-end"><strong>Start Year: </strong></div>
+            <div class="col-2">
+                <input type="number" class="form-control" id="startYear" value="1908">
+            </div>
+            <div class="col-2 text-end pe-2"><strong>End Year: </strong></div>
+            <div class="col-2">
+                <input type="number" class="form-control" id="endYear" value="2024">
+            </div>
+        </div>
+        <div class="row pt-2 pb-2 align-items-center">
+            <div class="col-2 text-end"><strong>Represent: </strong></div>
+            <div class="col-2">
+                <select class="form-select" id="represent">
+                    <option value="numAccident" selected>Number of Accident</option>
+                    <option value="totalAboard">Total Aboard</option>
+                    <option value="passengerAboard">Passenger Aboard</option>
+                    <option value="crewAboard">Crew Aboard</option>
+                    <option value="totalFatality">Total Fatalities</option>
+                    <option value="passengerFatality">Passenger Fatalities</option>
+                    <option value="crewFatality">Crew Fatalities</option>
+                </select>
+            </div>
+            <!-- <div class="col-2 text-end pe-2"><strong>By: </strong></div>
+            <div class="col-2">
+                <select class="form-select" id="representBy">
+                    <option value="count" selected>Count</option>
+                    <option value="mean">Mean</option>
+                    <option value="max">Max</option>
+                    <option value="min">Min</option>
+                </select>
+            </div> -->
+        </div>
+        <div id="heatmapContainer" class="text-center">
+            <svg class="heatmapBox" id="heatmap"></svg>
+            <div class="tooltip bs-tooltip-top show" id="heatmapTooltip" role="tooltip" style="display:none">
+                <div class="tooltip-arrow"></div>
+                <div class="tooltip-inner"></div>
+            </div>
+        </div>
+        <div class="row pt-2 pb-2">
+            <div class="col-2">
+                <button type="button" class="btn btn-primary w-100" id="selectAll">Select All</button>
+            </div>
+            <div class="col-2">
+                <button type="button" class="btn btn-danger w-100" id="reset">Reset</button>
+            </div>
+        </div>
+        <!-- Build world map vis -->
+        <div class="row pb-2">
+            <div class="col-2 pe-2">
+                <svg class="geoSmallBox" id="month1"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month2"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month3"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month4"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month5"></svg>
+            </div>
+            <div class="col-2 ps-2">
+                <svg class="geoSmallBox" id="month6"></svg>
+            </div>
+        </div class="row center-flex pt-2 pb-2">
+            <div class="col-12 ps-4 pe-4">
+                <svg class="geoBigBox" id="worldmap"></svg>
+            </div>
+        </div>
+        <div class="row pt-2">
+            <div class="col-2 pe-2">
+                <svg class="geoSmallBox" id="month7"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month8"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month9"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month10"></svg>
+            </div>
+            <div class="col-2 ps-2 pe-2">
+                <svg class="geoSmallBox" id="month11"></svg>
+            </div>
+            <div class="col-2 ps-2">
+                <svg class="geoSmallBox" id="month12"></svg>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="showData">
+                    <label class="form-check-label" for="showData">Show Data(Web page can stutter)</label>
+                </div>
+            </div>
+        </div>
+        <div class="row pt-2" style="overflow-x:auto;">
+            <table class="table table-striped text-center responsiveTable">
+                <thead class="table">
+                    <tr>
+                        <th>Year</th>
+                        <th>Month</th>
+                        <th>Day</th>
+                        <th>Country</th>
+                        <th>State</th>
+                        <th>City</th>
+                        <th>Hour</th>
+                        <th>Minute</th>
+                        <th>Operator</th>
+                        <th>Flight</th>
+                        <th>AC Type</th>
+                        <th>Registration</th>
+                        <th>Total Aboard</th>
+                        <th>Passenger Aboard</th>
+                        <th>Crew Aboard</th>
+                        <th>Total Fatalities</th>
+                        <th>Passenger Fatalities</th>
+                        <th>Crew Fatalities</th>
+                        <th>Summary</th>
+                    </tr>
+                </thead>
+                <tbody id="data-table">
+
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        let A2Data, geoData, successiveData, numUniqueCountryData, brushedA2Data, brushedCountry; 
+        let heatmap, worldMap, dataTable, loliPops;
+        let yMax;
+        // Listener for reasonable time setup
+        let timerId;
+        let startYear = document.getElementById("startYear");
+        let endYear = document.getElementById("endYear");
+        startYear.addEventListener("keyup", () => {
+            clearTimeout(timerId);
+            timerId = setTimeout(() => {
+                if (startYear.value > endYear.value) {
+                    startYear.value = endYear.value;
+                    alert("Start year can't be larger than start year")
+                }
+                if (startYear.value < 1908) {
+                    startYear.value = 1908;
+                    alert("Start year can't be smaller than 1908")
+                }
+            }, 1000);
+        });
+        endYear.addEventListener("keyup", () => {
+            clearTimeout(timerId);
+            timerId = setTimeout(() => {
+                if (endYear.value > 2024) {
+                    endYear.value = 2024;
+                    alert("End year can't be larger than 2024")
+                }
+            }, 1000);
+        });
+        // Infovis update function
+        function updateWorldMap(){
+            let represent = d3.select("#represent").property("value");
+            
+            worldMap.update(brushedA2Data,
+                            geoData,
+                            represent)
+        }
+
+        function updateLoliPop(){
+            let represent = d3.select("#represent").property("value");
+
+            if(represent === "numAccident"){
+                const counts = d3.rollup(brushedA2Data, v => v.length, d => d["month"], d => d["day"]);
+                yMax = Math.max(...Array.from(counts, ([key, map]) => Math.max(...Array.from(map.values()))));
+            }
+            else{
+                const counts = d3.rollup(brushedA2Data, v => d3.sum(v, d => d[represent]), d => d["month"], d => d["day"]);
+                yMax = Math.max(...Array.from(counts, ([key, map]) => Math.max(...Array.from(map.values()))));
+            }
+
+            lolipops.forEach((lolipop, index) => {
+                lolipop.update(brushedA2Data, represent, yMax);
+            })
+        }
+
+        function updateHeatmap(){
+            let startYear = d3.select("#startYear").property("value");
+            let endYear = d3.select("#endYear").property("value");
+            let represent = d3.select("#represent").property("value");
+
+            heatmap.update(brushedA2Data, represent, startYear, endYear);
+        }
+
+        function updateDataTable(){
+            if(d3.select("#showData").property("checked")){
+                dataTable.update(
+                    brushedA2Data,
+                    ["year", "month", "day", "country", "state", "city", "hour", "minute", "operator", "flight", "actype", "registration", "totalAboard", "passengerAboard", "crewAboard", "totalFatality", "passengerFatality", "crewFatality", "summary"]
+                );
+            }
+            else{
+                dataTable.reset();
+            }
+        }
+
+        function resetWorldMap(){
+            worldMap.reset();
+        }
+
+        function resetLoliPop(){
+            lolipops.forEach((lolipop, index) => {
+                lolipop.reset();
+            })
+        }
+
+        function resetHeatmap(){
+            heatmap.reset();
+        }
+
+        function resetDataTable(){
+            dataTable.reset();
+        }
+
+        function updateAll(){
+            let startYear = d3.select("#startYear").property("value");
+            let endYear = d3.select("#endYear").property("value");
+            let isShowData = d3.select("#showData").property("checked");
+
+            brushedA2Data = A2Data.filter(d => brushedCountry.includes(d["country"])); // duplicate brushedA2Data X(
+            if (brushedA2Data && brushedA2Data.length > 0) {
+                brushedA2Data = brushedA2Data.filter(d => d["year"] >= startYear && d["year"] <= endYear);
+            }
+            else {
+                brushedA2Data = A2Data.filter(d => d["year"] >= startYear && d["year"] <= endYear);
+            }
+            updateWorldMap();
+            updateLoliPop();
+            updateHeatmap();
+            updateDataTable();
+        }
+
+        function resetAll(){
+            brushedCountry = [];
+            brushedA2Data = A2Data;
+            resetWorldMap();
+            resetLoliPop();
+            resetHeatmap();
+            resetDataTable();
+        }
+
+        // Infovis
+        d3.csv("https://raw.githubusercontent.com/Kang-Min-Ku/infoVis/main/processed_data.csv")
+            .then(aad => {
+                aad.forEach(d => {
+                    d["crewAboard"] = +d["crewAboard"];
+                    d["crewFatality"] = +d["crewFatality"];
+                    d["day"] = +d["day"];
+                    d["ground"] = +d["ground"];
+                    d["hour"] = +d["hour"];
+                    d["minute"] = +d["minute"];
+                    d["month"] = +d["month"];
+                    d["passengerAboard"] = +d["passengerAboard"];
+                    d["passengerFatality"] = +d["passengerFatality"];
+                    d["totalAboard"] = +d["totalAboard"];
+                    d["totalFatality"] = +d["totalFatality"];
+                    d["year"] = +d["year"];
+                    d["route"] = d["route"].split(",");
+                });
+
+                A2Data = aad; // aviation accident
+
+                d3.json("https://raw.githubusercontent.com/Kang-Min-Ku/infoVis/main/smallWorld.geo.json")
+                    .then(d =>{ 
+                        geoData = d;
+                        // world map
+                        worldMap = new WorldMap("#worldmap", geoData, 1200, 400);
+                        worldMap.initialize();
+                        resetWorldMap();
+                        // listener
+                        d3.selectAll("#startYear").on("change", updateAll);
+                        d3.selectAll("#endYear").on("change", updateAll);
+                        d3.selectAll("#represent").on("change", updateAll);
+                        d3.selectAll("#selectAll").on("click", () => {
+                            brushedCountry = [...new Set(A2Data.map(d => d["country"]))];
+                            brushedA2Data = A2Data;
+                            updateAll();
+                        });
+                        d3.selectAll("#reset").on("click", resetAll);
+
+                        //brush
+                        worldMap.on("geoBrush", (bc) => {
+                            brushedCountry = bc;
+                            brushedA2Data = A2Data.filter(d => bc.includes(d["country"]));
+                            if (brushedA2Data.length > 0){
+                                updateAll();
+                            } 
+                            else {
+                                resetAll();
+                            }
+                        })
+                        worldMap.on("geoClick", (cc) => {
+                            if(!brushedCountry){
+                                brushedCountry = [];
+                            }
+                            if(brushedCountry.includes(cc)){
+                                brushedCountry = brushedCountry.filter(d => d != cc);
+                            }
+                            else{
+                                brushedCountry.push(cc);
+                            }
+                            brushedA2Data = A2Data.filter(d => brushedCountry.includes(d["country"]));
+                            if (brushedA2Data.length > 0){
+                                updateAll();
+                            } 
+                            else {
+                                resetAll();
+                            }
+                        })
+                    })
+                // lilipop chart
+                lolipops = Array.from({length:12})
+                lolipops.forEach((_, index) => {
+                    lolipops[index] = new LoliPopChart(`#month${index+1}`, index+1);
+                    if(index == 0 || index == 6){
+                        lolipops[index].initialize(true);
+                    }
+                    else{
+                        lolipops[index].initialize(false);
+                    }
+                })
+
+                d3.csv("https://raw.githubusercontent.com/Kang-Min-Ku/infoVis/main/successive_accident_occur.csv")
+                    .then(sd => {
+                        columns = sd.columns;
+                        sd.forEach(d => {
+                           columns.forEach(c => {
+                               if(c !== "country"){
+                                d[c] = +d[c];
+                               }
+                           }) 
+                        });
+                        successiveData = sd;
+
+                        d3.csv("https://raw.githubusercontent.com/Kang-Min-Ku/infoVis/main/unique_country.csv")
+                            .then(ud => {
+                                ud.forEach(d => {
+                                    d["num"] = +d["num"];
+                                });
+                                numUniqueCountryData = ud;
+
+                                // heatmap
+                                heatmap = new LinkedHeatMap("#heatmap", "#heatmapTooltip", successiveData, numUniqueCountryData, 1000, 840);
+                                heatmap.initialize() // 42 is the number of countries with the highest frequency of accidents in a single year
+                                // heatmap.update(A2Data, "numAccident", 1908, 2024);
+                            });
+                    });
+
+                // dataTable
+                dataTable = new DataTable("#data-table");
+                d3.select("#showData").on("change", updateAll);
+            })
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
