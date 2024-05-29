@@ -216,20 +216,32 @@
             timerId = setTimeout(() => {
                 if (startYear.value > endYear.value) {
                     startYear.value = endYear.value;
-                    alert("Start year can't be larger than start year")
+                    alert("Start year can't be larger than end year")
                 }
                 if (startYear.value < 1908) {
                     startYear.value = 1908;
                     alert("Start year can't be smaller than 1908")
+                }
+                if (startYear.value > 2024) {
+                    startYear.value = 2024;
+                    alert("Start year can't be larger than 2024")
                 }
             }, 1000);
         });
         endYear.addEventListener("keyup", () => {
             clearTimeout(timerId);
             timerId = setTimeout(() => {
+                if (endYear.value < startYear.value) {
+                    endYear.value = startYear.value;
+                    alert("End year can't be smaller than start year")
+                }
                 if (endYear.value > 2024) {
                     endYear.value = 2024;
                     alert("End year can't be larger than 2024")
+                }
+                if (endYear.value < 1908) {
+                    endYear.value = 1908;
+                    alert("End year can't be smaller than 1908")
                 }
             }, 1000);
         });
